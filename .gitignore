@@ -1,0 +1,7 @@
+libopenssl-helper.so*
+*.list
+RPMS
+Makefile
+*.build
+pkgconfig
+*.o
