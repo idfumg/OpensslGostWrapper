@@ -8,7 +8,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "openssl-helper.h"
+#include <openssl-helper/openssl-helper.h>
 
 void print_hex(const char* text, const uint8_t* data, const size_t size)
 {
@@ -28,8 +28,8 @@ int main()
      */
 
 	uint8_t privateKey[32] = {0};
-	const int ret = openssl_helper_keygen_256_data(privateKey,
-                                                   sizeof(privateKey));
+    int ret = openssl_helper_keygen_256_out(privateKey,
+                                            sizeof(privateKey));
     if (ret < 0) {
         printf("private key generation error: %s\n", openssl_helper_errstr);
         return 1;
@@ -41,11 +41,11 @@ int main()
       Generate public key from public key
      */
 
-    uint8_t publicKey[32] = {0};
-    ret = openssl_helper_compute_public_256_data(privateKey,
-                                                 sizeof(privateKey),
-                                                 publicKey,
-                                                 sizeof(publicKey) < 0);
+    uint8_t publicKey[64] = {0};
+    ret = openssl_helper_compute_public_256_out(privateKey,
+                                                sizeof(privateKey),
+                                                publicKey,
+                                                sizeof(publicKey) < 0);
     if (ret < 0) {
         printf("public key fetch error: %s\n", openssl_helper_errstr);
         return 1;
@@ -59,12 +59,12 @@ int main()
 
     const uint8_t data[32] = "iRHr2os1j0PXz65gVf9kmnwEW2SX3hu6";
     uint8_t signature[64] = {0};
-	ret = openssl_helper_sign_256_data(privateKey,
-                                       sizeof(privateKey),
-                                       data,
-                                       sizeof(data),
-                                       signature,
-                                       sizeof(signature));
+	ret = openssl_helper_sign_256_out(privateKey,
+                                      sizeof(privateKey),
+                                      data,
+                                      sizeof(data),
+                                      signature,
+                                      sizeof(signature));
 	if (ret < 0) {
 		printf("sign error: %s\n", openssl_helper_errstr);
         return 1;
@@ -83,8 +83,8 @@ int main()
                                     signature,
                                     sizeof(signature));
 
-    printf("with the publicKey: ");
-    printf(ret < 0 ? "verify not passed\n" : "verify passed\n");
+    printf("verify with the publicKey: %s\n",
+           ret < 0 ? openssl_helper_errstr : "passed");
 
     /*
       Verify data signature with the corrupted public key
@@ -99,8 +99,8 @@ int main()
                                     signature,
                                     sizeof(signature));
 
-    printf("with the corrupted publicKey: ");
-    printf(ret < 0 ? "verify not passed\n" : "verify passed\n");
+    printf("verify with the corrupted publicKey: %s\n",
+           ret < 0 ? openssl_helper_errstr : "passed");
 
 	return 0;
 }
