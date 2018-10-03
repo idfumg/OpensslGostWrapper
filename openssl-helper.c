@@ -1021,8 +1021,8 @@ int openssl_helper_compute_public_256_out(const void *key, size_t key_size,
     BN_CTX *bnctx = NULL;
     BIGNUM *priv = NULL;
     EC_POINT *pubkey = NULL;
-    const BIGNUM *pubkey_x = NULL;
-    const BIGNUM *pubkey_y = NULL;
+    BIGNUM *pubkey_x = NULL;
+    BIGNUM *pubkey_y = NULL;
     int res = -1;
 
     priv = BN_bin2bn(key, key_size, NULL);
@@ -1048,7 +1048,7 @@ int openssl_helper_compute_public_256_out(const void *key, size_t key_size,
         goto exit;
     }
 
-    ecgroup = EC_KEY_get0_group(eckey);
+    ecgroup = (EC_GROUP*)EC_KEY_get0_group(eckey);
     if(ecgroup == NULL) {
         openssl_helper_errstr = "ec_key egroup failure";
         goto exit;
@@ -1096,7 +1096,7 @@ int openssl_helper_compute_public_256_out(const void *key, size_t key_size,
         goto exit;
     }
 
-    ret = _BN_bn2binpad(pubkey_y, ((char*)out) + (OPENSSL_HELPER_GOST_SIGNATURE_PUBLIC_KEY_SIZE >> 1), OPENSSL_HELPER_GOST_SIGNATURE_PUBLIC_KEY_SIZE >> 1);
+    ret = _BN_bn2binpad(pubkey_y, ((uint8_t*)out) + (OPENSSL_HELPER_GOST_SIGNATURE_PUBLIC_KEY_SIZE >> 1), OPENSSL_HELPER_GOST_SIGNATURE_PUBLIC_KEY_SIZE >> 1);
     if (ret < 0) {
         openssl_helper_errstr = "convert public key(y) failure";
         goto exit;

@@ -5,3 +5,5 @@ Makefile
 *.build
 pkgconfig
 *.o
+test/test
+CMakeLists.txt
