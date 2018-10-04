@@ -7,3 +7,4 @@ pkgconfig
 *.o
 test/test
 CMakeLists.txt
+*.a

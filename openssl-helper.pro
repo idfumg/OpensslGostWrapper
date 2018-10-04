@@ -1,5 +1,5 @@
 TEMPLATE = lib
-CONFIG += link_pkgconfig
+CONFIG += staticlib link_pkgconfig
 CONFIG -= qt
 LIBS += -ldl
 

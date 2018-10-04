@@ -11,4 +11,4 @@ QMAKE_CFLAGS += -Wall -Wextra -std=c99
 QMAKE_CFLAGS_DEBUG += -O0 -ggdb
 QMAKE_CFLAGS_RELEASE +=
 
-SOURCES = openssl-helper-test.c
+SOURCES = openssl-helper-test-crypt.c

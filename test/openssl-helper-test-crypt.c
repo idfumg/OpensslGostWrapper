@@ -6,87 +6,80 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #include "openssl-helper.h"
 
-int main(int argc, char **argv)
+void print_hex(const char* text, const uint8_t* data, const size_t size)
 {
-	#define READ_SIZE 65536
-	int fd;
-	ssize_t r;
-	int i;
-	unsigned char out[32];
-	unsigned char *filebuf;
+    printf(text);
+    for (size_t i = 0; i < size; i++) {
+		printf("%02x", data[i]);
+	}
+	printf("\n");
+}
 
+int main()
+{
 	openssl_helper_initialize();
 
-	if (argc != 2) {
-		puts("Need filename");
-		return 1;
-	} else {
-		fd = open(argv[1], O_RDONLY);
-		if (fd < 0) {
-			exit(EXIT_FAILURE);
-		}
+    /*
+      Generate random salt
+     */
 
-		filebuf = malloc(READ_SIZE);
+    uint8_t salt[32] = {0};
+    int ret = openssl_helper_random_out(salt, sizeof(salt));
+    if (ret < 0) {
+        printf("random error: %s\n", openssl_helper_errstr);
+        return 1;
+    }
 
-		while ((r = read(fd, filebuf, READ_SIZE)) > 0) {
-			(void) openssl_helper_pbkdf2_256_out("12345", 5, "salt", 4, 1000, out, sizeof(out));
-		}
+    print_hex("random: ", salt, sizeof(salt));
 
-		close(fd);
-		free(filebuf);
-	}
+    /*
+      Generate key with the key derivation function with random salt for strong crypto
+     */
 
-	for (i = 0; i < 32; i++) {
-		printf("%02x", out[i]);
-	}
-	printf("\n");
+    const uint8_t password[] = "12345";
+    const uint16_t iterations = 1000;
+    uint8_t key[32] = {0};
+    ret = openssl_helper_pbkdf2_256_out(password,
+                                        sizeof(password),
+                                        salt,
+                                        sizeof(salt),
+                                        iterations,
+                                        key,
+                                        sizeof(key));
+    if (ret < 0) {
+        printf("pbkdf2 error: %s\n", openssl_helper_errstr);
+        return 1;
+    }
 
-	openssl_helper_random_out(out, sizeof(out));
+    print_hex("pbkdf2: ", key, sizeof(key));
 
-	for (i = 0; i < 32; i++) {
-		printf("%02x", out[i]);
-	}
-	printf("\n");
+    /*
+      Encrypt buf with random iv and generated key
+     */
 
-	(void)openssl_helper_ofb_kuznyechik_out(OPENSSL_HELPER_ENCRYPTION, "12345678901234567890123456789012", 32, "1234567890123456", 16, "12345678901234567890123456789012", 32, out, sizeof(out));
+    const uint8_t iv[16] = "c0M2eicdmI4sYyEK";
+    const uint8_t buf[] = "oGFLcJ0sEqd1lyiumcLhqQIugdUZWT9u";
+    uint8_t encrypted[sizeof(buf)] = {0};
 
-	for (i = 0; i < 32; i++) {
-		printf("%02x", out[i]);
-	}
-	printf("\n");
+	ret = openssl_helper_ofb_kuznyechik_out(OPENSSL_HELPER_ENCRYPTION,
+                                            key,
+                                            sizeof(key),
+                                            iv,
+                                            sizeof(iv),
+                                            buf,
+                                            sizeof(buf),
+                                            encrypted,
+                                            sizeof(encrypted));
+    if (ret < 0) {
+        printf("ofb_kuznyechik error: %s\n", openssl_helper_errstr);
+        return 1;
+    }
 
-	void *buf;
-	buf = "\x29\xec\x84\xa2\xed\x68\xc1\x4d\x1a\x01\x54\x6d\x99\xa3\x10\x32\x1f\x0e\xed\x00\x8c\x56\x7c\x9d\x8e\xf8\x7a\x29\xa2\x48\x30\x4c";
-	(void)openssl_helper_ofb_kuznyechik_out(OPENSSL_HELPER_DECRYPTION, "12345678901234567890123456789012", 32, "1234567890123456", 16, buf, 32, out, sizeof(out));
-
-	for (i = 0; i < 32; i++) {
-		printf("%02x", out[i]);
-	}
-	printf("\n");
-
-	printf("%.32s", out);
-	printf("\n");
-
-	(void)openssl_helper_ecb_kuznyechik_out(OPENSSL_HELPER_ENCRYPTION, "12345678901234567890123456789012", 32, "12345678901234567890123456789012", 32, out, sizeof(out));
-
-	for (i = 0; i < 32; i++) {
-		printf("%02x", out[i]);
-	}
-	printf("\n");
-
-	buf = "\x18\xde\xb7\x96\xd8\x5e\xf6\x75\x23\x31\x65\x5f\xaa\x97\x25\x04\xa4\x5e\xcd\x68\xb1\x13\x7a\xfe\x15\x35\xcf\xbf\x96\xc4\x3f\xf2";
-	(void)openssl_helper_ecb_kuznyechik_out(OPENSSL_HELPER_DECRYPTION, "12345678901234567890123456789012", 32, buf, 32, out, sizeof(out));
-
-	for (i = 0; i < 32; i++) {
-		printf("%02x", out[i]);
-	}
-	printf("\n");
-
-	printf("%.32s", out);
-	printf("\n");
+	print_hex("ofb_kuznyechik: ", encrypted, sizeof(encrypted));
 
 	return 0;
 }
